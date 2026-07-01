@@ -1,4 +1,10 @@
 
+// API Key and URL for OpenWeatherMap
+const weatherAPIKey = "c3a898f1d45d46f3794a60ef6468c109";
+const weatherAPIURL = `https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid=${weatherAPIKey}&units=metric`;
+
+
+
 // Menu Section
 
 const galleryImages = [
@@ -90,27 +96,49 @@ function greetingHandler() {
         greetingText = "Welcome!";
     }
 
+    document.querySelector("#greeting").innerHTML = greetingText;
 
-const weatherCondition = "sunny";
-const userLocation = "Phily";
-let temperature = 30;
 
-let celsiusText = `The weather is ${weatherCondition} in ${userLocation} and it's ${temperature.toFixed(1)}°C outside.`;
-let fahrText = `The weather is ${weatherCondition} in ${userLocation} and it's ${celsiusToFahr(temperature).toFixed(1)}°F outside.`;
 
-document.querySelector("#greeting").innerHTML = greetingText;
-document.querySelector("#weather").innerHTML = celsiusText;
+}
 
-document.querySelector(".weather-group").addEventListener("click", function(e){
+// Weather Text
+function weatherHandler() {
+    navigator.geolocation.getCurrentPosition(position => {
 
-    if (e.target.id === "celsius") {
+    let latitude = position.coords.latitude;
+    let longitude = position.coords.longitude;
+    let url = weatherAPIURL.replace("{lat}", latitude).replace("{lon}", longitude).replace("{API key}", weatherAPIKey);
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        const condition = data.weather[0].main;
+        const location = data.name;
+        let temperature = data.main.temp;
+
+        let celsiusText = `The weather is ${condition} in ${location} and it's ${temperature.toFixed(1)}°C outside.`;
+        let fahrText = `The weather is ${condition} in ${location} and it's ${celsiusToFahr(temperature).toFixed(1)}°F outside.`;
+
+
         document.querySelector("#weather").innerHTML = celsiusText;
 
-    } else if (e.target.id === "fahr") {
-        document.querySelector("#weather").innerHTML = fahrText;
-    }
+        // Temperature Switch
 
-});
+        document.querySelector(".weather-group").addEventListener("click", function(e){
+
+            if (e.target.id === "celsius") {
+                document.querySelector("#weather").innerHTML = celsiusText;
+
+            } else if (e.target.id === "fahr") {
+                document.querySelector("#weather").innerHTML = fahrText;
+            }
+
+        });
+    }).catch((err => {
+        document.querySelector("#weather").innerHTML = "Unable to get weather data. Please try again later.";
+    }));
+
+    });
 
 }
 
@@ -232,65 +260,9 @@ function populateProducts(productList) {
 
 function productsHandler() {
 
-    let productsSection = document.querySelector(".products-area");
-    let freeProducts = products.filter(function(item){
-        return !item.price || item.price <= 0;
-    });
-    let paidProducts = products.filter(function(item){
-        return item.price > 0;
-    });
 
-//     run a loop through the products and create a HTML element  ("product-item") for each of them.
-    products.forEach(function(product, index) {
-        // create the HTML element for the individual product
-        let productElm = document.createElement("div");
-        productElm.classList.add("product-item");
-
-
-        //Create the product image
-        let productImage = document.createElement("img");
-        productImage.src = product.image;
-        productImage.alt = "Image for " + product.title;
-
-
-        // Create the product details section
-        let productDetails = document.createElement("div");
-        productDetails.classList.add("product-details");
-
-        // Create the product title, author, price-title and price
-        let productTitle = document.createElement("h3");
-        productTitle.classList.add("product-title");
-        productTitle.textContent = product.title;
-
-        let productAuthor = document.createElement("p");
-        productAuthor.classList.add("product-author");
-        productAuthor.textContent = product.author;
-
-        let priceTitle = document.createElement("p");
-        priceTitle.classList.add("price-title");
-        priceTitle.textContent = "Price";
-
-        let productPrice = document.createElement("p");
-        productPrice.classList.add("product-price");
-        productPrice.textContent = product.price > 0 ? "$" + product.price.toFixed(2) : "Free";
-
-        
-
-        // Append the product details
-        productDetails.append(productTitle);
-        productDetails.append(productAuthor);
-        productDetails.append(priceTitle);
-        productDetails.append(productPrice);
-
-
-        // Add all child  HTML elements of the product
-        productElm.append(productImage);
-        productElm.append(productDetails);  
-
-
-        // add complete individual project to the product section
-        productsSection.append(productElm);
-    })
+    let freeProducts = products.filter(item => !item.price || item.price <= 0);
+    let paidProducts = products.filter(item => item.price > 0);
 
     populateProducts(products);
 
@@ -299,6 +271,7 @@ function productsHandler() {
     document.querySelector(".products-filter label[for=free] span.product-amount").textContent = freeProducts.length;
 
     let productFilter = document.querySelector(".products-filter");
+
     productFilter.addEventListener("click", function(e){
         if (e.target.id === "all") {
             populateProducts(products);
@@ -324,3 +297,4 @@ clockHandler();
 galleryHandler();
 productsHandler();
 footerHandler();
+weatherHandler();
